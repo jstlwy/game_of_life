@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# Binary
+game_of_life
+
+# Object files
+*.o
