@@ -1,6 +1,6 @@
 #include "timing.h"
 
-struct timespec get_time_diff(const struct timespec* const start, const struct timespec* const stop)
+struct timespec get_time_diff_struct(const struct timespec* const start, const struct timespec* const stop)
 {
     struct timespec diff = {
         .tv_sec = stop->tv_sec - start->tv_sec,
@@ -18,7 +18,15 @@ struct timespec get_time_diff(const struct timespec* const start, const struct t
 
 int64_t get_time_diff_ns(const struct timespec* const start, const struct timespec* const stop)
 {
-    const struct timespec diff = get_time_diff(start, stop);
-    return (diff.tv_sec * NS_PER_S) + diff.tv_nsec;
+    int64_t sec = stop->tv_sec - start->tv_sec;
+    int64_t nsec = stop->tv_nsec - start->tv_nsec;
+    if (sec > 0 && nsec < 0) {
+        nsec += NS_PER_S;
+        sec--;
+    } else if (sec < 0 && nsec > 0) {
+        nsec -= NS_PER_S;
+        sec++;
+    }
+    return (sec * NS_PER_S) + nsec;
 }
 
