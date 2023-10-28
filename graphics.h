@@ -10,16 +10,16 @@
 #define NUM_BYTES     (NUM_PIXELS * sizeof(uint32_t))
 #define TEXTURE_PITCH (SCREEN_WIDTH * sizeof(uint32_t))
 
-typedef struct {
+struct sdl_graphics {
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* texture;
     uint32_t* pixels;
-} graphics_t;
+} ;
 
-void init_graphics(graphics_t* const gfx);
-void render_graphics(graphics_t* const gfx);
-void end_graphics(graphics_t* const gfx);
+void init_graphics(struct sdl_graphics* const gfx);
+void render_graphics(struct sdl_graphics* const gfx);
+void end_graphics(struct sdl_graphics* const gfx);
 
 #endif
 

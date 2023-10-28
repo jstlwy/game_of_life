@@ -9,8 +9,8 @@
 #define NS_PER_FRAME_30FPS 33333333
 #define NS_PER_FRAME_60FPS 16666667
 
-struct timespec get_time_diff(struct timespec const* const start, struct timespec const* const stop);
-int64_t get_time_diff_ns(struct timespec const* const start, struct timespec const* const stop);
+struct timespec get_time_diff(const struct timespec* const start, const struct timespec* const stop);
+int64_t get_time_diff_ns(const struct timespec* const start, const struct timespec* const stop);
 
 #endif
 
