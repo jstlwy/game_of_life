@@ -97,71 +97,28 @@ int main(void)
     return EXIT_SUCCESS;
 }
 
-
 void update_cells(uint8_t prev[const], uint8_t next[const])
 {
-    static const size_t LAST_COL = SCREEN_WIDTH - 1;
-    uint8_t num_neighbors;
-
-    // TOP ROW
-    // Top left corner cell
-    num_neighbors = prev[1] + prev[SCREEN_WIDTH] + prev[SCREEN_WIDTH+1];
-    next[0] = cell_is_alive(prev[0], num_neighbors);
-    // Second through second-to-last cells
-    for (size_t x = 1; x < LAST_COL; x++) {
-        const size_t i_below = x + SCREEN_WIDTH;
-        num_neighbors = prev[x-1] + prev[x+1] + prev[i_below-1] + prev[i_below] + prev[i_below+1];
-        next[x] = cell_is_alive(prev[x], num_neighbors);
-    }
-    // Top right corner cell
-    static const size_t i_below_trc = LAST_COL + SCREEN_WIDTH;
-    num_neighbors = prev[LAST_COL-1] + prev[i_below_trc] + prev[i_below_trc-1];
-    next[LAST_COL] = cell_is_alive(prev[LAST_COL], num_neighbors);
-
-    // SECOND THROUGH SECOND-TO-LAST ROWS
-    for (size_t y = SCREEN_WIDTH; y < NUM_PIXELS - SCREEN_WIDTH; y += SCREEN_WIDTH) {
-        // FAR LEFT PIXEL
-        size_t i_above = y - SCREEN_WIDTH;
-        size_t i_below = y + SCREEN_WIDTH;
-        num_neighbors = prev[i_above] + prev[i_above+1] + prev[y+1] + prev[i_below] + prev[i_below+1];
-        next[y] = cell_is_alive(prev[y], num_neighbors);
-
-        // MIDDLE PIXELS
-        for (size_t x = 1; x < SCREEN_WIDTH - 1; x++) {
-            const size_t i_cell = y + x;
-            i_above = i_cell - SCREEN_WIDTH;
-            i_below = i_cell + SCREEN_WIDTH;
-            num_neighbors = prev[i_cell-1] + prev[i_cell+1] +
-                            prev[i_above-1] + prev[i_above] + prev[i_above+1] +
-                            prev[i_below-1] + prev[i_below] + prev[i_below+1];
-            next[i_cell] = cell_is_alive(prev[i_cell], num_neighbors);
+    for (size_t y = 0; y < SCREEN_HEIGHT; y++) {
+        const size_t row = y * SCREEN_WIDTH;
+        const bool prev_row_exists = y > 0;
+        const bool next_row_exists = y < (SCREEN_HEIGHT - 1);
+        for (size_t x = 0; x < SCREEN_WIDTH; x++) {
+            const bool prev_col_exists = x > 0;
+            const bool next_col_exists = x < (SCREEN_WIDTH - 1);
+            const size_t i = row + x;
+            uint8_t num_neighbors = (prev_col_exists && prev[i-1]) + (next_col_exists && prev[i+1]);
+            if (prev_row_exists) {
+                const size_t i_above = i - SCREEN_WIDTH;
+                num_neighbors += (prev_col_exists && prev[i_above-1]) + prev[i_above] + (next_col_exists && prev[i_above+1]);
+            }
+            if (next_row_exists) {
+                const size_t i_below = i + SCREEN_WIDTH;
+                num_neighbors += (prev_col_exists && prev[i_below-1]) + prev[i_below] + (next_col_exists && prev[i_below+1]);
+            }
+            next[i] = cell_is_alive(prev[i], num_neighbors);
         }
-
-        // FAR RIGHT PIXEL
-        const size_t i_cell = y + LAST_COL;
-        i_above = i_cell - SCREEN_WIDTH;
-        i_below = i_cell + SCREEN_WIDTH;
-        num_neighbors = prev[i_above] + prev[i_above-1] + prev[i_cell-1] + prev[i_below] + prev[i_below-1];
-        next[y] = cell_is_alive(prev[i_cell], num_neighbors);
     }
-
-    // BOTTOM ROW
-    // Bottom left corner cell
-    static const size_t y_bottom = NUM_PIXELS - SCREEN_WIDTH;
-    num_neighbors = prev[y_bottom+1] + prev[y_bottom-SCREEN_WIDTH] + prev[y_bottom-SCREEN_WIDTH+1];
-    next[y_bottom] = cell_is_alive(prev[y_bottom], num_neighbors);
-    // Second through second-to-last cells
-    for (size_t x = 1; x < SCREEN_WIDTH; x++) {
-        const size_t i_cell = y_bottom + x;
-        const size_t i_above = i_cell - SCREEN_WIDTH;
-        num_neighbors = prev[i_cell-1] + prev[i_cell+1] + prev[i_above-1] + prev[i_above] + prev[i_above+1];
-        next[i_cell] = cell_is_alive(prev[i_cell], num_neighbors);
-    }
-    // Bottom right corner cell
-    static const size_t i_brc = NUM_PIXELS-1;
-    static const size_t i_above_brc = i_brc - SCREEN_WIDTH;
-    num_neighbors = prev[i_brc-1] + prev[i_above_brc] + prev[i_above_brc-1];
-    next[i_brc] = cell_is_alive(prev[i_brc], num_neighbors);
 }
 
 inline uint8_t cell_is_alive(const uint8_t cell, const uint8_t num_neighbors)
