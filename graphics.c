@@ -11,7 +11,7 @@
 
 bool was_initialized = false;
 
-struct sdl_graphics init_graphics(void)
+struct sdl_graphics init_graphics(const char* const title)
 {
     if (was_initialized) {
         fprintf(stderr, "Only one instance of sdl_graphics may exist at a time.\n");
@@ -25,7 +25,7 @@ struct sdl_graphics init_graphics(void)
     }
     
     SDL_Window* const window = SDL_CreateWindow(
-        "Ray Tracing Project",
+        title,
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
         SCREEN_WIDTH,

@@ -16,7 +16,7 @@ void draw_cells(uint8_t cells[const], struct sdl_graphics* const gfx);
 
 int main(void)
 {
-    struct sdl_graphics gfx = init_graphics();
+    struct sdl_graphics gfx = init_graphics("Conway's Game of Life");
 
     // Create the cell buffers
     bool draw_from_cellbuf1 = true;

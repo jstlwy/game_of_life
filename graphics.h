@@ -17,7 +17,7 @@ struct sdl_graphics {
     uint32_t* const pixels;
 };
 
-struct sdl_graphics init_graphics(void);
+struct sdl_graphics init_graphics(const char* const title);
 void render_graphics(struct sdl_graphics* const gfx);
 void end_graphics(struct sdl_graphics* const gfx);
 
