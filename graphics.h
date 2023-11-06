@@ -11,13 +11,13 @@
 #define TEXTURE_PITCH (SCREEN_WIDTH * sizeof(uint32_t))
 
 struct sdl_graphics {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* texture;
-    uint32_t* pixels;
-} ;
+    SDL_Window* const window;
+    SDL_Renderer* const renderer;
+    SDL_Texture* const texture;
+    uint32_t* const pixels;
+};
 
-void init_graphics(struct sdl_graphics* const gfx);
+struct sdl_graphics init_graphics(void);
 void render_graphics(struct sdl_graphics* const gfx);
 void end_graphics(struct sdl_graphics* const gfx);
 

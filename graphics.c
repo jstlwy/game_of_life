@@ -1,6 +1,7 @@
 #include "graphics.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define SCREEN_WIDTH  640
 #define SCREEN_HEIGHT 480
@@ -8,11 +9,19 @@
 #define NUM_BYTES     (NUM_PIXELS * sizeof(uint32_t))
 #define TEXTURE_PITCH (SCREEN_WIDTH * sizeof(uint32_t))
 
-void init_graphics(struct sdl_graphics* const gfx)
+bool was_initialized = false;
+
+struct sdl_graphics init_graphics(void)
 {
+    if (was_initialized) {
+        fprintf(stderr, "Only one instance of sdl_graphics may exist at a time.\n");
+        exit(EXIT_FAILURE);
+    }
+    was_initialized = true;
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL_Init error: %s\n", SDL_GetError());
-        goto exit_program;
+        exit(EXIT_FAILURE);
     }
     
     SDL_Window* const window = SDL_CreateWindow(
@@ -47,29 +56,25 @@ void init_graphics(struct sdl_graphics* const gfx)
     }
 
     uint32_t* const pixels = malloc(NUM_PIXELS * sizeof(uint32_t));
-    if (pixels == NULL) {
-        fprintf(stderr, "Failed to allocate memory for the pixel array.\n");
-        goto destroy_texture;
+    if (pixels != NULL) {
+        struct sdl_graphics gfx = {
+            .window = window,
+            .renderer = renderer,
+            .texture = texture,
+            .pixels = pixels
+        };
+        return gfx;
     }
+    fprintf(stderr, "Failed to allocate memory for the pixel array.\n");
 
-    goto set_gfx;
-
-destroy_texture:
-    SDL_DestroyTexture(gfx->texture);
+    SDL_DestroyTexture(texture);
 destroy_renderer:
-    SDL_DestroyRenderer(gfx->renderer);
+    SDL_DestroyRenderer(renderer);
 destroy_window:
-    SDL_DestroyWindow(gfx->window);
+    SDL_DestroyWindow(window);
 quit_sdl:
     SDL_Quit();
-exit_program:
     exit(EXIT_FAILURE);
-
-set_gfx:
-    gfx->window = window;
-    gfx->renderer = renderer;
-    gfx->texture = texture;
-    gfx->pixels = pixels;
 }
 
 void render_graphics(struct sdl_graphics* const gfx)
@@ -87,5 +92,6 @@ void end_graphics(struct sdl_graphics* const gfx)
     SDL_DestroyRenderer(gfx->renderer);
     SDL_DestroyWindow(gfx->window);
     SDL_Quit();
+    was_initialized = false;
 }
 

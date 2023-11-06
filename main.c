@@ -16,8 +16,7 @@ void draw_cells(uint8_t cells[const], struct sdl_graphics* const gfx);
 
 int main(void)
 {
-    struct sdl_graphics gfx;
-    init_graphics(&gfx);
+    struct sdl_graphics gfx = init_graphics();
 
     // Create the cell buffers
     bool draw_from_cellbuf1 = true;
