@@ -10,6 +10,7 @@
 #include "graphics.h"
 #include "timing.h"
 
+#define USE_SIMD
 #define LIVE_CELL 0xFF000000
 #define DEAD_CELL 0xFFFFFFFF
 
@@ -27,37 +28,44 @@ int main(void)
     struct sdl_graphics gfx = init_graphics("Conway's Game of Life");
 
     // Create the cell buffers
-    //uint32_t* const cellbuf1 = malloc(NUM_BYTES_IN_TEXTURE);
+    uint32_t* const cellbuf1 = malloc(NUM_BYTES_IN_TEXTURE);
+#ifndef USE_SIMD
     uint32_t* const cellbuf2 = malloc(NUM_BYTES_IN_TEXTURE);
+    if ((cellbuf1 == NULL) || (cellbuf2 == NULL)) {
+#elif defined(__ARM_NEON__)
     uint32_t* const neighbor_counts = malloc(NUM_BYTES_IN_TEXTURE);
-    if (/*(cellbuf1 == NULL) ||*/ (cellbuf2 == NULL) || (neighbor_counts == NULL)) {
+    if ((cellbuf1 == NULL) || (neighbor_counts == NULL)) {
+#endif
         fprintf(stderr, "Error: Failed to allocate memory for the cell buffers.\n");
         end_graphics(&gfx);
         return EXIT_FAILURE;
     }
 
-    // Randomize cellbuf2
+    // Randomize cellbuf1
     static const char dev_urand_path[] = "/dev/urandom";
     const int devurand_fd = open(dev_urand_path, O_RDONLY);
     if (devurand_fd == -1) {
         fprintf(stderr, "Error when opening %s: %s\n", dev_urand_path, strerror(errno));
-        //free(cellbuf1);
+        free(cellbuf1);
+#ifndef USE_SIMD
         free(cellbuf2);
+#else
         free(neighbor_counts);
+#endif
         end_graphics(&gfx);
         return EXIT_FAILURE;
     }
-    if (read(devurand_fd, cellbuf2, NUM_BYTES_IN_TEXTURE) == -1) {
+    if (read(devurand_fd, cellbuf1, NUM_BYTES_IN_TEXTURE) == -1) {
         fprintf(stderr, "Error when reading from %s: %s\n", dev_urand_path, strerror(errno));
     }
     close(devurand_fd);
     size_t i = 0;
-#ifdef __ARM_NEON__
+#if defined(USE_SIMD) && defined(__ARM_NEON__)
     const uint32x4_t all_live = vdupq_n_u32(LIVE_CELL);
     const uint32x4_t all_dead = vdupq_n_u32(DEAD_CELL);
     const uint32x4_t one_vec = vdupq_n_u32(0x00000001);
     for (; (i + 4) <= NUM_PIXELS; i += 4) {
-        uint32_t* const ptr_cells = cellbuf2 + i;
+        uint32_t* const ptr_cells = cellbuf1 + i;
         const uint32x4_t current_cells = vandq_u32(vld1q_u32(ptr_cells), one_vec);
         const uint32x4_t live_mask = vceqq_u32(current_cells, one_vec);
         const uint32x4_t dead_mask = vmvnq_u32(live_mask);
@@ -65,15 +73,14 @@ int main(void)
         const uint32x4_t dead_cells = vandq_u32(dead_mask, all_dead);
         vst1q_u32(ptr_cells, vorrq_u32(live_cells, dead_cells));
     }
-#else
+#endif
     for (; i < NUM_PIXELS; i++) {
-        if (cellbuf2[i] & 0x00000001) {
-            cellbuf2[i] = LIVE_CELL;
+        if (cellbuf1[i] & 0x00000001) {
+            cellbuf1[i] = LIVE_CELL;
         } else {
-            cellbuf2[i] = DEAD_CELL;
+            cellbuf1[i] = DEAD_CELL;
         }
     }
-#endif
 
     bool quit = false;
     while (!quit) {
@@ -81,23 +88,20 @@ int main(void)
         clock_gettime(CLOCK_MONOTONIC, &start);
 
         // UPDATE SCREEN
-        /*
+#if defined(USE_SIMD) && defined(__ARM_NEON__)
+        update_cells_neon(cellbuf1, neighbor_counts);
+        render_graphics(&gfx, cellbuf1);
+#else
         static bool draw_from_cellbuf1 = true;
         if (draw_from_cellbuf1) {
-            update_cells(cellbuf2, cellbuf1);
             render_graphics(&gfx, cellbuf1);
-        } else {
             update_cells(cellbuf1, cellbuf2);
+        } else {
             render_graphics(&gfx, cellbuf2);
+            update_cells(cellbuf2, cellbuf1);
         }
         draw_from_cellbuf1 = !draw_from_cellbuf1;
-        */
-#ifdef __ARM_NEON__
-        update_cells_neon(cellbuf2, neighbor_counts);
-#else
-        update_cells_alt(cellbuf2, neighbor_counts);
 #endif
-        render_graphics(&gfx, cellbuf2);
 
         SDL_Event event;
         if (SDL_PollEvent(&event)) {
@@ -130,9 +134,12 @@ int main(void)
         }
     }
     
-    //free(cellbuf1);
+    free(cellbuf1);
+#ifndef USE_SIMD
     free(cellbuf2);
+#else
     free(neighbor_counts);
+#endif
     end_graphics(&gfx);
     return EXIT_SUCCESS;
 }
@@ -175,6 +182,7 @@ inline bool cell_is_alive(const uint32_t cell, const uint8_t num_neighbors)
     return (num_neighbors == 3) || ((cell == LIVE_CELL) && (num_neighbors == 2));
 }
 
+#if 0
 void update_cells_alt(
     uint32_t cells[const static NUM_PIXELS],
     uint32_t neighbor_counts[const static NUM_PIXELS])
@@ -265,8 +273,9 @@ void update_cells_alt(
         }
     }
 }
+#endif
 
-#if defined(__ARM_NEON__)
+#ifdef __ARM_NEON__
 void update_cells_neon(
     uint32_t cells[const static NUM_PIXELS],
     uint32_t neighbor_counts[const static NUM_PIXELS])
