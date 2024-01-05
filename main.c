@@ -15,7 +15,7 @@
 #define DEAD_CELL 0xFFFFFFFF
 
 void update_cells(uint32_t prev[const static NUM_PIXELS], uint32_t next[const static NUM_PIXELS]);
-void update_cells_alt(uint32_t cells[const static NUM_PIXELS], uint32_t neighbor_counts[const static NUM_PIXELS]);
+//void update_cells_alt(uint32_t cells[const static NUM_PIXELS], uint32_t neighbor_counts[const static NUM_PIXELS]);
 inline bool cell_is_alive(const uint32_t cell, const uint8_t num_neighbors);
 
 #ifdef __ARM_NEON__
@@ -29,12 +29,12 @@ int main(void)
 
     // Create the cell buffers
     uint32_t* const cellbuf1 = malloc(NUM_BYTES_IN_TEXTURE);
-#ifndef USE_SIMD
-    uint32_t* const cellbuf2 = malloc(NUM_BYTES_IN_TEXTURE);
-    if ((cellbuf1 == NULL) || (cellbuf2 == NULL)) {
-#elif defined(__ARM_NEON__)
+#if defined(USE_SIMD) && defined(__ARM_NEON__)
     uint32_t* const neighbor_counts = malloc(NUM_BYTES_IN_TEXTURE);
     if ((cellbuf1 == NULL) || (neighbor_counts == NULL)) {
+#else
+    uint32_t* const cellbuf2 = malloc(NUM_BYTES_IN_TEXTURE);
+    if ((cellbuf1 == NULL) || (cellbuf2 == NULL)) {
 #endif
         fprintf(stderr, "Error: Failed to allocate memory for the cell buffers.\n");
         end_graphics(&gfx);
@@ -154,7 +154,8 @@ void update_cells(uint32_t prev[const static NUM_PIXELS], uint32_t next[const st
             const bool prev_col_exists = x > 0;
             const bool next_col_exists = x < (SCREEN_WIDTH - 1);
             const size_t i = row + x;
-            uint8_t num_neighbors = (prev_col_exists && (prev[i-1] == LIVE_CELL)) + (next_col_exists && (prev[i+1] == LIVE_CELL));
+            uint8_t num_neighbors = (prev_col_exists && (prev[i-1] == LIVE_CELL))
+                                  + (next_col_exists && (prev[i+1] == LIVE_CELL));
             if (prev_row_exists) {
                 const size_t i_above = i - SCREEN_WIDTH;
                 num_neighbors += (prev_col_exists && (prev[i_above-1] == LIVE_CELL))
