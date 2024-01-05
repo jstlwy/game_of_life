@@ -14,11 +14,10 @@ struct sdl_graphics {
     SDL_Window* const window;
     SDL_Renderer* const renderer;
     SDL_Texture* const texture;
-    uint32_t* const pixels;
 };
 
 struct sdl_graphics init_graphics(const char* const title);
-void render_graphics(struct sdl_graphics* const gfx);
+void render_graphics(struct sdl_graphics* const gfx, const uint32_t pixels[const static NUM_PIXELS]);
 void end_graphics(struct sdl_graphics* const gfx);
 
 #endif
