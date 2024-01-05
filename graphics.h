@@ -4,11 +4,11 @@
 #include <stdint.h>
 #include <SDL2/SDL.h>
 
-#define SCREEN_WIDTH  640
-#define SCREEN_HEIGHT 480
-#define NUM_PIXELS    (SCREEN_WIDTH * SCREEN_HEIGHT)
-#define NUM_BYTES     (NUM_PIXELS * sizeof(uint32_t))
-#define TEXTURE_PITCH (SCREEN_WIDTH * sizeof(uint32_t))
+#define SCREEN_WIDTH         640
+#define SCREEN_HEIGHT        480
+#define NUM_PIXELS           (SCREEN_WIDTH * SCREEN_HEIGHT)
+#define NUM_BYTES_IN_TEXTURE (NUM_PIXELS * sizeof(uint32_t))
+#define TEXTURE_PITCH        (SCREEN_WIDTH * sizeof(uint32_t))
 
 struct sdl_graphics {
     SDL_Window* const window;
